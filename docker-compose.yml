@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:12-alpine
+    restart: unless-stopped
+    env_file:
+      - ./usjt/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+  redis:
+    image: redis:6-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    expose:
+      - 6379
+  django:
+    build: ./usjt
+    env_file:
+      - ./usjt/.env
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+    volumes: 
+      - ./usjt:/usr/app
+    command: [./manage.py, runserver, 0.0.0.0:8000]
+    entrypoint: [./entrypoint.sh]
+    depends_on: 
+      - postgres
+  celery_worker:
+    build: ./usjt
+    env_file:
+      - ./usjt/.env
+    restart: unless-stopped
+    volumes: 
+      - ./usjt:/usr/app
+    command: [celery, -A, usjt, worker, -l, INFO]
+    depends_on: 
+      - postgres
+      - redis
+  celery_beat:
+    build: ./usjt
+    volumes: 
+      - ./usjt:/usr/app
+    env_file: ./usjt/.env
+    restart: unless-stopped
+    command: [celery, -A, usjt, beat, -l, INFO]
+    depends_on: 
+      - postgres
+      - redis
+
+volumes: 
+  postgres_data:
+  redis_data:

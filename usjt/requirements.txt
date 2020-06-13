@@ -1,0 +1,8 @@
+django
+django-rest-framework
+django-filter
+psycopg2-binary
+requests
+beautifulsoup4
+celery
+redis
